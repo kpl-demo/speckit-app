@@ -72,3 +72,7 @@ Use standard REST conventions.
 Add JUnit 5 and Mockito tests.
 
 Keep the implementation minimal. Avoid unnecessary abstractions and additional dependencies.
+
+/speckit-tasks
+
+/speckit-implementation
