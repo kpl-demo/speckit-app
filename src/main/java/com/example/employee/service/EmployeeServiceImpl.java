@@ -2,6 +2,7 @@ package com.example.employee.service;
 
 import com.example.employee.dto.EmployeeResponse;
 import com.example.employee.entity.Employee;
+import com.example.employee.exception.ResourceNotFoundException;
 import com.example.employee.repository.EmployeeRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -26,6 +27,13 @@ public class EmployeeServiceImpl implements EmployeeService {
                 .toList();
     }
 
+    @Override
+    public EmployeeResponse getEmployeeById(Long id) {
+        return employeeRepository.findById(id)
+                .map(this::toEmployeeResponse)
+                .orElseThrow(() -> new ResourceNotFoundException("Employee not found with id: " + id));
+    }
+
     private EmployeeResponse toEmployeeResponse(Employee employee) {
         return new EmployeeResponse(
                 employee.getId(),
@@ -37,4 +45,3 @@ public class EmployeeServiceImpl implements EmployeeService {
         );
     }
 }
-

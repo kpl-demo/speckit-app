@@ -2,6 +2,7 @@ package com.example.employee.controller;
 
 import com.example.employee.dto.EmployeeResponse;
 import com.example.employee.exception.GlobalExceptionHandler;
+import com.example.employee.exception.ResourceNotFoundException;
 import com.example.employee.service.EmployeeService;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -94,6 +95,59 @@ class EmployeeControllerTest {
     }
 
     @Test
+    @DisplayName("GET /api/employees/{id} returns HTTP 200 and employee JSON object when employee exists")
+    void getEmployeeById_whenEmployeeExists_returns200AndJsonObject() throws Exception {
+        EmployeeResponse employee = new EmployeeResponse(
+                1L,
+                "Alice",
+                "Smith",
+                "alice.smith@example.com",
+                "Engineering",
+                new BigDecimal("95000.00")
+        );
+        when(employeeService.getEmployeeById(1L)).thenReturn(employee);
+
+        mockMvc.perform(get("/api/employees/1").accept(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk())
+                .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_JSON))
+                .andExpect(jsonPath("$.id").value(1))
+                .andExpect(jsonPath("$.firstName").value("Alice"))
+                .andExpect(jsonPath("$.lastName").value("Smith"))
+                .andExpect(jsonPath("$.email").value("alice.smith@example.com"))
+                .andExpect(jsonPath("$.department").value("Engineering"))
+                .andExpect(jsonPath("$.salary").value(95000.00));
+
+        verify(employeeService, times(1)).getEmployeeById(1L);
+    }
+
+    @Test
+    @DisplayName("GET /api/employees/{id} returns HTTP 404 and structured JSON error when employee does not exist")
+    void getEmployeeById_whenEmployeeDoesNotExist_returns404JsonError() throws Exception {
+        when(employeeService.getEmployeeById(999L))
+                .thenThrow(new ResourceNotFoundException("Employee not found with id: 999"));
+
+        mockMvc.perform(get("/api/employees/999").accept(MediaType.APPLICATION_JSON))
+                .andExpect(status().isNotFound())
+                .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_JSON))
+                .andExpect(jsonPath("$.status").value(404))
+                .andExpect(jsonPath("$.error").value("Not Found"))
+                .andExpect(jsonPath("$.message").value("Employee not found with id: 999"));
+
+        verify(employeeService, times(1)).getEmployeeById(999L);
+    }
+
+    @Test
+    @DisplayName("GET /api/employees/{id} returns HTTP 400 when id path variable is non-numeric")
+    void getEmployeeById_whenIdIsNonNumeric_returns400BadRequest() throws Exception {
+        mockMvc.perform(get("/api/employees/abc").accept(MediaType.APPLICATION_JSON))
+                .andExpect(status().isBadRequest())
+                .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_JSON))
+                .andExpect(jsonPath("$.status").value(400))
+                .andExpect(jsonPath("$.error").value("Bad Request"))
+                .andExpect(jsonPath("$.message").value("Invalid parameter 'id': abc"));
+    }
+
+    @Test
     @DisplayName("Write operations (POST, PUT, DELETE) on /api/employees return HTTP 405 Method Not Allowed")
     void writeOperations_onEmployeesEndpoint_return405MethodNotAllowed() throws Exception {
         mockMvc.perform(post("/api/employees")
@@ -126,4 +180,3 @@ class EmployeeControllerTest {
                 .andExpect(jsonPath("$.message").value("An unexpected error occurred"));
     }
 }
-
